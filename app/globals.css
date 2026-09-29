@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+body {
+  font-family: var(--font-global), Arial, Helvetica, sans-serif;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Read-only forms: don't show placeholder text on disabled controls. */
+input:disabled::placeholder,
+textarea:disabled::placeholder {
+  color: transparent !important;
+}
+
+.ant-select-disabled .ant-select-placeholder {
+  color: transparent !important;
+}
+
+/* Disabled controls: neutral cursor instead of antd's not-allowed. */
+input:disabled,
+textarea:disabled,
+.ant-input-disabled,
+.ant-input-affix-wrapper-disabled,
+.ant-input-number-disabled,
+.ant-picker-disabled,
+.ant-select-disabled,
+.ant-select-disabled * {
+  cursor: default !important;
+}
