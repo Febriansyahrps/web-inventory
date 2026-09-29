@@ -9,15 +9,20 @@
 // Column definitions and values come from lib/reportModel.ts, shared with the
 // XLSX renderer.
 
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import PDFDocument from "pdfkit";
 import type { ReportBarang } from "@/lib/reportData";
 import {
   formatLongDate,
   REPORT_COLUMNS,
+  REPORT_CONTACT_LINES,
   REPORT_HEADERS,
+  REPORT_SIGNATURES,
   REPORT_SUBTITLE,
   REPORT_TITLE,
   REPORT_TOTAL_WEIGHT,
+  pngSize,
   reportRowDisplay,
 } from "@/lib/reportModel";
 
@@ -32,9 +37,15 @@ const GRID_COLOR = "#9AA0A6";
 const HEADER_FILL = "#F2EDE3";
 const TITLE_SIZE = 13;
 const SUBTITLE_SIZE = 11;
+const CONTACT_SIZE = 8;
 const SIGNATURE_SIZE = 9;
 const SIGNATURE_LINE = 13;
 const SIGNATURE_RESERVE = 150;
+const SIGNATURE_IMAGE_HEIGHT = 38;
+
+/** Read a signature PNG from the deployed project root. */
+const signatureImage = (relativePath: string): Buffer =>
+  readFileSync(path.join(process.cwd(), relativePath));
 
 function render(
   doc: PDFKit.PDFDocument,
@@ -64,7 +75,25 @@ function render(
     width: contentWidth,
     align: "center",
   });
-  y = doc.y + 12;
+
+  // Contact block (address / phone / email), centered under the school name.
+  doc.font("Helvetica").fontSize(CONTACT_SIZE);
+  REPORT_CONTACT_LINES.forEach((line) => {
+    doc.text(line, PAGE_MARGIN, doc.y + 1, {
+      width: contentWidth,
+      align: "center",
+    });
+  });
+
+  // Rule dividing the header block from the table body.
+  y = doc.y + 6;
+  doc
+    .strokeColor("black")
+    .lineWidth(1)
+    .moveTo(PAGE_MARGIN, y)
+    .lineTo(PAGE_MARGIN + contentWidth, y)
+    .stroke();
+  y += 10;
 
   /** Height a row needs so its tallest cell fits without clipping. */
   const measureRow = (cells: string[], bold: boolean): number => {
@@ -138,7 +167,7 @@ function render(
     y += height;
   });
 
-  // ---- Signature block (static placeholders) ----
+  // ---- Signature block (image + name per signatory) ----
   if (y + SIGNATURE_RESERVE > contentBottom) {
     doc.addPage();
     y = PAGE_MARGIN;
@@ -146,46 +175,49 @@ function render(
     y += 16;
   }
 
-  const col1 = PAGE_MARGIN;
-  const col2 = PAGE_MARGIN + contentWidth * 0.36;
+  // "Banjarnegara, <generation date>" — right aligned to the outer margin.
+  const dateText = `Banjarnegara, ${formatLongDate(generatedAt)}`;
+  doc
+    .font("Helvetica")
+    .fontSize(SIGNATURE_SIZE)
+    .fillColor("black")
+    .text(dateText, PAGE_MARGIN, y, {
+      width: contentWidth,
+      align: "right",
+      lineBreak: false,
+    });
 
-  const label = (text: string, x: number, top: number) => {
-    doc
-      .font("Helvetica")
-      .fontSize(SIGNATURE_SIZE)
-      .fillColor("black")
-      .text(text, x, top, { lineBreak: false });
+  /** Draw `text` centered on `centerX`. */
+  const label = (text: string, centerX: number, top: number) => {
+    doc.font("Helvetica").fontSize(SIGNATURE_SIZE).fillColor("black");
+    doc.text(text, centerX - doc.widthOfString(text) / 2, top, {
+      lineBreak: false,
+    });
   };
 
-  // "Banjarnegara, <generation date>" — right aligned to the outer margin, with
-  // the Mengetahui / Kepala Sekolah column starting exactly under its left edge.
-  const rightEdge = PAGE_MARGIN + contentWidth;
-  const dateText = `Banjarnegara, ${formatLongDate(generatedAt)}`;
-  doc.font("Helvetica").fontSize(SIGNATURE_SIZE);
-  const col3 = rightEdge - doc.widthOfString(dateText);
+  // One column per signatory, evenly spread across the content width.
+  const columnWidth = contentWidth / REPORT_SIGNATURES.length;
+  const centerOf = (index: number) =>
+    PAGE_MARGIN + columnWidth * (index + 0.5);
 
-  doc.fillColor("black").text(dateText, PAGE_MARGIN, y, {
-    width: contentWidth,
-    align: "right",
-    lineBreak: false,
+  const labelsTop = y + SIGNATURE_LINE + 8;
+  const imagesTop = labelsTop + SIGNATURE_LINE + 2;
+  const namesTop = imagesTop + SIGNATURE_IMAGE_HEIGHT + 6;
+
+  REPORT_SIGNATURES.forEach((signature, index) => {
+    const centerX = centerOf(index);
+    label(signature.role, centerX, labelsTop);
+
+    const png = signatureImage(signature.imagePath);
+    const size = pngSize(png);
+    const width = (size.width / size.height) * SIGNATURE_IMAGE_HEIGHT;
+    doc.image(png, centerX - width / 2, imagesTop, {
+      width,
+      height: SIGNATURE_IMAGE_HEIGHT,
+    });
+
+    label(signature.name, centerX, namesTop);
   });
-
-  const labelsTop = y + SIGNATURE_LINE + 6;
-  label("Petugas Pencatat 1", col1, labelsTop);
-  label("Petugas Pencatat 2", col2, labelsTop);
-  label("Mengetahui:", col3, labelsTop);
-  label("Kepala Sekolah", col3, labelsTop + SIGNATURE_LINE);
-
-  // Blank gap reserved for names/signatures.
-  const namesTop = labelsTop + SIGNATURE_LINE * 2 + 40;
-  label("Nama", col1, namesTop);
-  label("Nama", col2, namesTop);
-  label("Nama", col3, namesTop);
-
-  const nipTop = namesTop + SIGNATURE_LINE + 6;
-  label("NIP", col1, nipTop);
-  label("NIP", col2, nipTop);
-  label("NIP", col3, nipTop);
 }
 
 /**

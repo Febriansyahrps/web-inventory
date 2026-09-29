@@ -6,16 +6,21 @@
 // format, instead of being flattened to display strings. Page setup is
 // landscape so printing matches the PDF.
 
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { Workbook } from "exceljs";
 import type { Cell, Worksheet } from "exceljs";
 import type { ReportBarang } from "@/lib/reportData";
 import {
   formatLongDate,
   REPORT_COLUMNS,
+  REPORT_CONTACT_LINES,
   REPORT_HEADERS,
+  REPORT_SIGNATURES,
   REPORT_SUBTITLE,
   REPORT_TITLE,
   REPORT_TOTAL_WEIGHT,
+  pngSize,
   reportRowValues,
 } from "@/lib/reportModel";
 
@@ -29,6 +34,11 @@ const CHAR_PER_WEIGHT = 7.5;
 const MIN_COL_WIDTH = 4;
 
 const SIGNATURE_COLUMNS = [1, 7, 14]; // A, G, N — spread across the sheet.
+const SIGNATURE_IMAGE_HEIGHT = 38; // px
+
+/** Read a signature PNG from the deployed project root. */
+const signatureImage = (relativePath: string): Buffer =>
+  readFileSync(path.join(process.cwd(), relativePath));
 
 const columnLetter = (index: number): string => {
   let n = index;
@@ -61,6 +71,7 @@ const writeCellValue = (cell: Cell, value: unknown, numFmt?: string) => {
 };
 
 function renderSheet(
+  workbook: Workbook,
   worksheet: Worksheet,
   rows: ReportBarang[],
   generatedAt: Date,
@@ -86,8 +97,29 @@ function renderSheet(
   subtitle.font = { bold: true, size: 11 };
   subtitle.alignment = { horizontal: "center", vertical: "middle" };
 
-  // ---- Header row (row 4, leaving row 3 blank) ----
-  const headerRow = worksheet.getRow(4);
+  // ---- Contact block (address / phone / email) ----
+  REPORT_CONTACT_LINES.forEach((line, i) => {
+    const rowNumber = 3 + i;
+    worksheet.mergeCells(`A${rowNumber}:${LAST_COLUMN}${rowNumber}`);
+    const cell = worksheet.getCell(`A${rowNumber}`);
+    cell.value = line;
+    cell.font = { size: 9 };
+    cell.alignment = { horizontal: "center", vertical: "middle" };
+  });
+
+  // ---- Rule dividing the header block from the table body ----
+  const dividerRowNumber = 2 + REPORT_CONTACT_LINES.length;
+  for (let column = 1; column <= REPORT_COLUMNS.length; column += 1) {
+    worksheet.getCell(dividerRowNumber, column).border = {
+      bottom: { style: "medium", color: { argb: BORDER_COLOR } },
+    };
+  }
+
+  // ---- Header row (one blank row below the title block) ----
+  const headerRowNumber = 3 + REPORT_CONTACT_LINES.length + 1;
+  worksheet.views = [{ state: "frozen", ySplit: headerRowNumber }];
+
+  const headerRow = worksheet.getRow(headerRowNumber);
   REPORT_HEADERS.forEach((title, i) => {
     const cell = headerRow.getCell(i + 1);
     cell.value = title;
@@ -107,7 +139,7 @@ function renderSheet(
   headerRow.commit();
 
   // ---- Data rows ----
-  let rowIndex = 5;
+  let rowIndex = headerRowNumber + 1;
   for (const [index, row] of rows.entries()) {
     const values = reportRowValues(row, index);
     const excelRow = worksheet.getRow(rowIndex);
@@ -127,7 +159,7 @@ function renderSheet(
     rowIndex += 1;
   }
 
-  // ---- Signature block (static, blank for now) ----
+  // ---- Signature block (image + name per signatory) ----
   rowIndex += 1;
 
   worksheet.mergeCells(`A${rowIndex}:${LAST_COLUMN}${rowIndex}`);
@@ -136,22 +168,30 @@ function renderSheet(
   dateCell.alignment = { horizontal: "right" };
   rowIndex += 2;
 
-  const labels = ["Petugas Pencatat 1", "Petugas Pencatat 2", "Mengetahui:"];
-  labels.forEach((label, i) => {
-    worksheet.getCell(rowIndex, SIGNATURE_COLUMNS[i]).value = label;
-  });
-  rowIndex += 1;
+  const labelsRow = rowIndex;
+  const imagesRow = labelsRow + 1;
+  const namesRow = imagesRow + 2;
+  worksheet.getRow(imagesRow).height = 30;
 
-  worksheet.getCell(rowIndex, SIGNATURE_COLUMNS[2]).value = "Kepala Sekolah";
-  rowIndex += 3;
+  REPORT_SIGNATURES.forEach((signature, i) => {
+    const column = SIGNATURE_COLUMNS[i];
+    worksheet.getCell(labelsRow, column).value = signature.role;
+    worksheet.getCell(namesRow, column).value = signature.name;
 
-  // Signature space, then the blank Nama / NIP fields.
-  const namesRow = rowIndex;
-  SIGNATURE_COLUMNS.forEach((col) => {
-    worksheet.getCell(namesRow, col).value = "Nama";
-  });
-  SIGNATURE_COLUMNS.forEach((col) => {
-    worksheet.getCell(namesRow + 2, col).value = "NIP";
+    const buffer = signatureImage(signature.imagePath);
+    const size = pngSize(buffer);
+    const height = SIGNATURE_IMAGE_HEIGHT;
+    const width = (size.width / size.height) * height;
+
+    // exceljs declares its own Buffer type, which Node's does not satisfy.
+    const imageId = workbook.addImage({
+      buffer: buffer as never,
+      extension: "png",
+    });
+    worksheet.addImage(imageId, {
+      tl: { col: column - 1, row: imagesRow - 1 },
+      ext: { width, height },
+    });
   });
 }
 
@@ -171,10 +211,9 @@ export async function buildReportXlsx(
 
   const worksheet = workbook.addWorksheet("Laporan Barang Masuk", {
     pageSetup: { orientation: "landscape" },
-    views: [{ state: "frozen", ySplit: 4 }],
   });
 
-  renderSheet(worksheet, rows, generatedAt);
+  renderSheet(workbook, worksheet, rows, generatedAt);
 
   // Explicit as well as via constructor options, so the print orientation is
   // always persisted regardless of how the sheet was created.

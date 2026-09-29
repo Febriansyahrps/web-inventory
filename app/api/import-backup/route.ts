@@ -292,8 +292,8 @@ export async function POST(req: Request) {
       }
     }
 
+    // no_register is optional — rows are imported with whatever the CSV holds.
     if (cell(row, "kode_barang") === "") add("Missing required field: kode_barang");
-    if (cell(row, "no_register") === "") add("Missing required field: no_register");
     if (cell(row, "nama_barang") === "") add("Missing required field: nama_barang");
 
     const jumlah = cell(row, "jumlah_barang");

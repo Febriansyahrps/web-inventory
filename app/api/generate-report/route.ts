@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
-import { resolveDateRange } from "@/lib/dateRange";
 import { getReportBarang } from "@/lib/reportData";
 import { buildReportPdf } from "@/lib/reportPdf";
 import { buildReportXlsx } from "@/lib/reportXlsx";
@@ -15,28 +14,22 @@ type ReportFile = keyof typeof CONTENT_TYPES;
 const asOptionalString = (value: unknown): string | null =>
   typeof value === "string" && value.trim() !== "" ? value.trim() : null;
 
-/** `YYYY-MM-DD` from a Date, in local time (matches the range boundaries). */
-const ymd = (date: Date): string => {
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${date.getFullYear()}-${month}-${day}`;
-};
+/** Download name: `Laporan Inventaris Masuk DD-MM-YYYY HH-MM-SS.<ext>`. */
+function reportFilename(file: ReportFile, generatedAt: Date): string {
+  const pad = (value: number) => String(value).padStart(2, "0");
 
-/** Download name describing the report's actual date window. */
-function reportFilename(
-  file: ReportFile,
-  rangeDate: string | null,
-  startDate: string | null,
-  endDate: string | null,
-): string {
-  const { gte, lte } = resolveDateRange(rangeDate, startDate, endDate);
+  const date = [
+    pad(generatedAt.getDate()),
+    pad(generatedAt.getMonth() + 1),
+    generatedAt.getFullYear(),
+  ].join("-");
+  const time = [
+    pad(generatedAt.getHours()),
+    pad(generatedAt.getMinutes()),
+    pad(generatedAt.getSeconds()),
+  ].join("-");
 
-  let span = "semua";
-  if (gte && lte) span = `${ymd(gte)}_${ymd(lte)}`;
-  else if (gte) span = `dari_${ymd(gte)}`;
-  else if (lte) span = `sampai_${ymd(lte)}`;
-
-  return `laporan-barang-masuk-${span}.${file}`;
+  return `Laporan Inventaris Masuk ${date} ${time}.${file}`;
 }
 
 export async function POST(req: Request) {
@@ -76,7 +69,7 @@ export async function POST(req: Request) {
         ? await buildReportPdf(rows, generatedAt)
         : await buildReportXlsx(rows, generatedAt);
 
-    const filename = reportFilename(file, rangeDate, startDate, endDate);
+    const filename = reportFilename(file, generatedAt);
 
     return new NextResponse(new Uint8Array(buffer), {
       status: 200,

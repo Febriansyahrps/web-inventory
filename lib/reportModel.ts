@@ -10,6 +10,55 @@ import type { ReportBarang } from "@/lib/reportData";
 export const REPORT_TITLE = "LAPORAN BULANAN INVENTARIS BARANG MASUK";
 export const REPORT_SUBTITLE = "SMK TAMANSISWA BANJARNEGARA";
 
+export const REPORT_ADDRESS =
+  "Jl. Mayjend Panjaitan No. 29, Krandegan, Kec. Banjarnegara, Kab. Banjarnegara, Jawa Tengah 53414";
+export const REPORT_PHONE = "(0286) 591304";
+export const REPORT_EMAIL = "smktambara2020@gmail.com";
+
+/** Contact block rendered under the school name in both report formats. */
+export const REPORT_CONTACT_LINES = [
+  `Alamat: ${REPORT_ADDRESS}`,
+  `Telepon: ${REPORT_PHONE}`,
+  `Email: ${REPORT_EMAIL}`,
+];
+
+export interface ReportSignature {
+  /** Label above the signature, e.g. "Kepala Sekolah". */
+  role: string;
+  /** Name printed below the signature image. */
+  name: string;
+  /** Signature PNG, as a path relative to the project root. */
+  imagePath: string;
+}
+
+/** Signatories, in left-to-right order for both the PDF and XLSX blocks. */
+export const REPORT_SIGNATURES: ReportSignature[] = [
+  {
+    role: "Kepala Sekolah",
+    name: "Mad Mualif, S.E., S.Kom.",
+    imagePath:
+      "public/assets/signature/Kepala Sekolah/Mad Mualif, S.E., S.Kom..png",
+  },
+  {
+    role: "Petugas Pencatat 1",
+    name: "Nurlaila Nugrahaeni, S.Pd.",
+    imagePath:
+      "public/assets/signature/Petugas Pencatat 1/Nurlaila Nugrahaeni, S.Pd..png",
+  },
+  {
+    role: "Petugas Pencatat 2",
+    name: "Tri Imani Mikaningsih, S.Pd.",
+    imagePath:
+      "public/assets/signature/Petugas Pencatat 2/Tri Imani Mikaningsih, S.Pd..png",
+  },
+];
+
+/** Pixel dimensions from a PNG's IHDR chunk, for scaling it by aspect ratio. */
+export const pngSize = (png: Buffer): { width: number; height: number } => ({
+  width: png.readUInt32BE(16),
+  height: png.readUInt32BE(20),
+});
+
 export const MONTHS_ID = [
   "Januari",
   "Februari",
