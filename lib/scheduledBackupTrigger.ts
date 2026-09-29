@@ -3,7 +3,6 @@
 // helper only fires the authenticated HTTP request.
 export async function triggerBackupEmailCheck() {
   const baseUrl =
-    process.env.URL ??
     process.env.APP_BASE_URL ??
     (process.env.VERCEL_PROJECT_PRODUCTION_URL
       ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
