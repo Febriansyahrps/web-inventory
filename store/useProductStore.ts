@@ -128,7 +128,7 @@ export const useProductStore = create<ProductState>((set) => ({
         error:
           axios.isAxiosError(err) && err.response?.data?.message
             ? err.response.data.message
-            : "Failed to fetch products",
+            : "Gagal memuat data barang",
       });
     }
   },

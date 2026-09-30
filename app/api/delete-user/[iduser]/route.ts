@@ -11,22 +11,22 @@ export async function DELETE(
   try {
     decoded = verifyToken(req.headers.get("Authorization"));
   } catch {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ message: "Tidak terautentikasi" }, { status: 401 });
   }
 
   if (decoded.role !== "ADMIN") {
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ message: "Akses ditolak" }, { status: 403 });
   }
 
   const { iduser } = await params;
   const id = Number(iduser);
   if (!Number.isInteger(id)) {
-    return NextResponse.json({ message: "Invalid user id" }, { status: 400 });
+    return NextResponse.json({ message: "Id pengguna tidak valid" }, { status: 400 });
   }
 
   const user = await prisma.user.findUnique({ where: { id } });
   if (!user) {
-    return NextResponse.json({ message: "User not found" }, { status: 404 });
+    return NextResponse.json({ message: "Pengguna tidak ditemukan" }, { status: 404 });
   }
 
   await prisma.user.delete({ where: { id } });
@@ -41,7 +41,7 @@ export async function DELETE(
   });
 
   return NextResponse.json({
-    message: "User deleted successfully",
-    description: `User ${user.username} has been removed.`,
+    message: "Pengguna berhasil dihapus",
+    description: `Pengguna ${user.username} telah dihapus.`,
   });
 }

@@ -61,11 +61,14 @@ export const useDashboardStore = create<DashboardState>((set) => ({
     try {
       const token = Cookies.get("auth-token");
 
-      const { data } = await axios.get<DashboardResponse>("/api/dashboard-data", {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : undefined,
+      const { data } = await axios.get<DashboardResponse>(
+        "/api/dashboard-data",
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
         },
-      });
+      );
 
       set({
         total_product: data.total_product,
@@ -83,7 +86,7 @@ export const useDashboardStore = create<DashboardState>((set) => ({
         error:
           axios.isAxiosError(err) && err.response?.data?.message
             ? err.response.data.message
-            : "Failed to fetch dashboard data",
+            : "Gagal memuat data dashboard",
       });
     }
   },

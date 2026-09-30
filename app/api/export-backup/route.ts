@@ -10,11 +10,11 @@ export async function POST(req: Request) {
   try {
     decoded = verifyToken(req.headers.get("Authorization"));
   } catch {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ message: "Tidak terautentikasi" }, { status: 401 });
   }
 
   if (decoded.role !== "ADMIN") {
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ message: "Akses ditolak" }, { status: 403 });
   }
 
   const { buffer, filename } = await generateBackupZip();

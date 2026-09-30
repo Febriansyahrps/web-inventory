@@ -37,7 +37,7 @@ export async function POST(req: Request) {
   try {
     decoded = verifyToken(req.headers.get("Authorization"));
   } catch {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ message: "Tidak terautentikasi" }, { status: 401 });
   }
 
   // ADMIN and VIEWER both allowed — only a valid token is required.
@@ -46,13 +46,13 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ message: "Invalid request body" }, { status: 400 });
+    return NextResponse.json({ message: "Body request tidak valid" }, { status: 400 });
   }
 
   const file = body.file;
   if (file !== "pdf" && file !== "xlsx") {
     return NextResponse.json(
-      { message: 'file is required and must be "pdf" or "xlsx"' },
+      { message: 'file wajib diisi dan harus "pdf" atau "xlsx"' },
       { status: 400 },
     );
   }
@@ -82,7 +82,7 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error("generate-report failed", err);
     return NextResponse.json(
-      { message: "Failed to generate report" },
+      { message: "Gagal membuat laporan" },
       { status: 500 },
     );
   }

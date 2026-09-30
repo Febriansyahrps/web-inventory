@@ -38,7 +38,7 @@ export async function sendBackupEmail(
   });
 
   if (error || !data) {
-    throw new Error(error?.message ?? "Failed to send backup email");
+    throw new Error(error?.message ?? "Gagal mengirim email backup");
   }
 
   // Only logged once Resend has confirmed the send.

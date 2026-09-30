@@ -32,7 +32,7 @@ export default function LoginPage() {
         if (response.status === 200) {
           Notification({
             type: "success",
-            title: "Login Success",
+            title: "Login Berhasil",
             description: response.data.message,
           });
         }
@@ -47,7 +47,7 @@ export default function LoginPage() {
         console.log("error", err);
         Notification({
           type: "error",
-          title: "Login Failed",
+          title: "Login Gagal",
           description: err.response?.data?.message,
         });
       })

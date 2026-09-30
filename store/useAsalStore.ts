@@ -46,7 +46,7 @@ export const useAsalStore = create<AsalState>((set) => ({
         error:
           axios.isAxiosError(err) && err.response?.data?.message
             ? err.response.data.message
-            : "Failed to fetch asal",
+            : "Gagal memuat data asal barang",
       });
     }
   },

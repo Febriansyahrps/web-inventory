@@ -45,7 +45,7 @@ export async function GET(req: Request) {
   try {
     decoded = verifyToken(req.headers.get("Authorization"));
   } catch {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ message: "Tidak terautentikasi" }, { status: 401 });
   }
 
   // ADMIN and VIEWER both allowed — no further role gate needed.

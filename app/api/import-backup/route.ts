@@ -27,11 +27,11 @@ type CsvRow = Record<string, string>;
 
 // FK columns in barang.csv -> the lookup table they must resolve against.
 const FK_COLUMNS: { column: string; key: LookupKey; label: string }[] = [
-  { column: "id_kategori_barang", key: "kategori_barang", label: "category" },
-  { column: "id_lokasi_barang", key: "lokasi_barang", label: "location" },
-  { column: "id_asal_barang", key: "asal_barang", label: "origin" },
-  { column: "id_keadaan_barang", key: "keadaan_barang", label: "condition" },
-  { column: "id_satuan_barang", key: "satuan_barang", label: "unit" },
+  { column: "id_kategori_barang", key: "kategori_barang", label: "kategori" },
+  { column: "id_lokasi_barang", key: "lokasi_barang", label: "lokasi" },
+  { column: "id_asal_barang", key: "asal_barang", label: "asal" },
+  { column: "id_keadaan_barang", key: "keadaan_barang", label: "keadaan" },
+  { column: "id_satuan_barang", key: "satuan_barang", label: "satuan" },
 ];
 
 const cell = (row: CsvRow, column: string): string =>
@@ -64,7 +64,7 @@ const parseRequiredFile = (
     errors.push({
       file,
       row: 0,
-      reason: "Required file is missing from the ZIP",
+      reason: "File wajib tidak ada di dalam ZIP",
     });
     return null;
   }
@@ -76,7 +76,7 @@ const parseRequiredFile = (
     errors.push({
       file,
       row: 0,
-      reason: `Could not parse CSV: ${(error as Error).message}`,
+      reason: `Gagal membaca CSV: ${(error as Error).message}`,
     });
     return null;
   }
@@ -86,7 +86,7 @@ const parseRequiredFile = (
     errors.push({
       file,
       row: 1,
-      reason: `Missing required column(s): ${missing.join(", ")}`,
+      reason: `Kolom wajib belum ada: ${missing.join(", ")}`,
     });
     return null;
   }
@@ -156,11 +156,11 @@ export async function POST(req: Request) {
   try {
     decoded = verifyToken(req.headers.get("Authorization"));
   } catch {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ message: "Tidak terautentikasi" }, { status: 401 });
   }
 
   if (decoded.role !== "ADMIN") {
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ message: "Akses ditolak" }, { status: 403 });
   }
 
   let form: FormData;
@@ -168,7 +168,7 @@ export async function POST(req: Request) {
     form = await req.formData();
   } catch {
     return NextResponse.json(
-      { message: "Invalid multipart body" },
+      { message: "Body multipart tidak valid" },
       { status: 400 },
     );
   }
@@ -176,7 +176,7 @@ export async function POST(req: Request) {
   const upload = form.get("file");
   if (!(upload instanceof File)) {
     return NextResponse.json(
-      { message: "Missing required file: file" },
+      { message: "File wajib belum diisi: file" },
       { status: 400 },
     );
   }
@@ -193,7 +193,7 @@ export async function POST(req: Request) {
       entries.set(name, (await entry.buffer()).toString("utf8"));
     }
   } catch {
-    return NextResponse.json({ message: "Invalid ZIP file" }, { status: 400 });
+    return NextResponse.json({ message: "File ZIP tidak valid" }, { status: 400 });
   }
 
   const errors: ImportError[] = [];
@@ -231,7 +231,7 @@ export async function POST(req: Request) {
         errors.push({
           file: table.file,
           row: line,
-          reason: "id must be a positive integer",
+          reason: "id harus berupa bilangan bulat positif",
         });
       } else {
         ids.add(id);
@@ -240,7 +240,7 @@ export async function POST(req: Request) {
         errors.push({
           file: table.file,
           row: line,
-          reason: "Missing required field: name",
+          reason: "Field wajib belum diisi: name",
         });
       }
     });
@@ -278,7 +278,7 @@ export async function POST(req: Request) {
       errors.push({ file: BARANG_FILE, row: line, reason });
 
     if (asPositiveInt(cell(row, "id")) === null) {
-      add("id must be a positive integer");
+      add("id harus berupa bilangan bulat positif");
     }
 
     for (const { column, key, label } of FK_COLUMNS) {
@@ -286,41 +286,41 @@ export async function POST(req: Request) {
       if (raw === "") continue;
       const id = asPositiveInt(raw);
       if (id === null) {
-        add(`${column} must be a positive integer`);
+        add(`${column} harus berupa bilangan bulat positif`);
       } else if (!allowedIds(key).has(id)) {
-        add(`${column} references a non-existent ${label}`);
+        add(`${column} merujuk ke ${label} yang tidak ada`);
       }
     }
 
     // no_register is optional — rows are imported with whatever the CSV holds.
-    if (cell(row, "kode_barang") === "") add("Missing required field: kode_barang");
-    if (cell(row, "nama_barang") === "") add("Missing required field: nama_barang");
+    if (cell(row, "kode_barang") === "") add("Field wajib belum diisi: kode_barang");
+    if (cell(row, "nama_barang") === "") add("Field wajib belum diisi: nama_barang");
 
     const jumlah = cell(row, "jumlah_barang");
     if (jumlah === "" || !Number.isInteger(Number(jumlah)) || Number(jumlah) < 0) {
-      add("jumlah_barang must be a non-negative integer");
+      add("jumlah_barang harus berupa bilangan bulat non-negatif");
     }
 
     const harga = cell(row, "harga_barang");
     if (harga === "" || Number.isNaN(Number(harga)) || Number(harga) < 0) {
-      add("harga_barang must be a non-negative number");
+      add("harga_barang harus berupa angka non-negatif");
     }
 
     if (asOptionalInt(cell(row, "tahun_perolehan")) === undefined) {
-      add("tahun_perolehan must be an integer");
+      add("tahun_perolehan harus berupa bilangan bulat");
     }
 
     for (const column of ["created_at", "updated_at"]) {
       const raw = cell(row, column);
       if (raw !== "" && Number.isNaN(new Date(raw).getTime())) {
-        add(`${column} must be a valid date`);
+        add(`${column} harus berupa tanggal yang valid`);
       }
     }
   });
 
   if (errors.length > 0) {
     return NextResponse.json(
-      { message: "Import failed — no changes were made", errors },
+      { message: "Import gagal — tidak ada perubahan yang dilakukan", errors },
       { status: 400 },
     );
   }
@@ -374,7 +374,7 @@ export async function POST(req: Request) {
   });
 
   return NextResponse.json({
-    message: "Import completed successfully",
+    message: "Import berhasil diselesaikan",
     summary,
   });
 }

@@ -10,18 +10,18 @@ export async function POST(req: Request) {
   try {
     decoded = verifyToken(req.headers.get("Authorization"));
   } catch {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ message: "Tidak terautentikasi" }, { status: 401 });
   }
 
   if (decoded.role !== "ADMIN") {
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ message: "Akses ditolak" }, { status: 403 });
   }
 
   let form: FormData;
   try {
     form = await req.formData();
   } catch {
-    return NextResponse.json({ message: "Invalid multipart body" }, { status: 400 });
+    return NextResponse.json({ message: "Body multipart tidak valid" }, { status: 400 });
   }
 
   const get = (k: string): string | undefined => {
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
 
   if (missing.length > 0) {
     return NextResponse.json(
-      { message: `Missing required field(s): ${missing.join(", ")}` },
+      { message: `Field wajib belum diisi: ${missing.join(", ")}` },
       { status: 400 }
     );
   }
@@ -73,7 +73,7 @@ export async function POST(req: Request) {
     idLokasi = Number(lokasiRaw);
     if (!Number.isInteger(idLokasi) || idLokasi <= 0) {
       return NextResponse.json(
-        { message: "id_lokasi_barang must be an integer" },
+        { message: "id_lokasi_barang harus berupa bilangan bulat" },
         { status: 400 }
       );
     }
@@ -81,15 +81,15 @@ export async function POST(req: Request) {
 
   if (!Number.isInteger(idKat) || !Number.isInteger(idAsal) || !Number.isInteger(idKead) || !Number.isInteger(idSatu)) {
     return NextResponse.json(
-      { message: "id_kategori_barang, id_asal_barang, id_keadaan_barang, id_satuan_barang must be integers" },
+      { message: "id_kategori_barang, id_asal_barang, id_keadaan_barang, id_satuan_barang harus berupa bilangan bulat" },
       { status: 400 }
     );
   }
   if (!Number.isInteger(jumlah) || jumlah < 0) {
-    return NextResponse.json({ message: "jumlah_barang must be a non-negative integer" }, { status: 400 });
+    return NextResponse.json({ message: "jumlah_barang harus berupa bilangan bulat non-negatif" }, { status: 400 });
   }
   if (Number.isNaN(harga) || harga < 0) {
-    return NextResponse.json({ message: "harga_barang must be a non-negative number" }, { status: 400 });
+    return NextResponse.json({ message: "harga_barang harus berupa angka non-negatif" }, { status: 400 });
   }
 
   // FK existence checks
@@ -108,7 +108,7 @@ export async function POST(req: Request) {
     if (!keadRow) bad.push("id_keadaan_barang");
     if (!satuRow) bad.push("id_satuan_barang");
     return NextResponse.json(
-      { message: `Referenced row not found for: ${bad.join(", ")}` },
+      { message: `Data referensi tidak ditemukan untuk: ${bad.join(", ")}` },
       { status: 400 }
     );
   }
@@ -165,8 +165,8 @@ export async function POST(req: Request) {
   });
 
   return NextResponse.json({
-    message: "Product created successfully",
-    description: `Product ${barang.namaBarang} has been created.`,
+    message: "Barang berhasil dibuat",
+    description: `Barang ${barang.namaBarang} telah dibuat.`,
     data: serializeBarang(barang),
   });
 }

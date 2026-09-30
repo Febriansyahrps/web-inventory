@@ -12,22 +12,22 @@ export async function DELETE(
   try {
     decoded = verifyToken(req.headers.get("Authorization"));
   } catch {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ message: "Tidak terautentikasi" }, { status: 401 });
   }
 
   if (decoded.role !== "ADMIN") {
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ message: "Akses ditolak" }, { status: 403 });
   }
 
   const { idbarang } = await params;
   const id = Number(idbarang);
   if (!Number.isInteger(id)) {
-    return NextResponse.json({ message: "Invalid product id" }, { status: 400 });
+    return NextResponse.json({ message: "Id barang tidak valid" }, { status: 400 });
   }
 
   const barang = await prisma.barang.findUnique({ where: { id } });
   if (!barang) {
-    return NextResponse.json({ message: "Product not found" }, { status: 404 });
+    return NextResponse.json({ message: "Barang tidak ditemukan" }, { status: 404 });
   }
 
   // Delete the associated photo file (if any) to avoid orphaned files.
@@ -46,7 +46,7 @@ export async function DELETE(
   });
 
   return NextResponse.json({
-    message: "Product deleted successfully",
-    description: `Product ${barang.namaBarang} has been removed.`,
+    message: "Barang berhasil dihapus",
+    description: `Barang ${barang.namaBarang} telah dihapus.`,
   });
 }

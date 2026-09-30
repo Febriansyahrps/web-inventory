@@ -10,28 +10,28 @@ export async function DELETE(
   try {
     decoded = verifyToken(req.headers.get("Authorization"));
   } catch {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ message: "Tidak terautentikasi" }, { status: 401 });
   }
 
   if (decoded.role !== "ADMIN") {
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ message: "Akses ditolak" }, { status: 403 });
   }
 
   const { id } = await params;
   const rowId = Number(id);
   if (!Number.isInteger(rowId)) {
-    return NextResponse.json({ message: "Invalid id" }, { status: 400 });
+    return NextResponse.json({ message: "Id tidak valid" }, { status: 400 });
   }
 
   const existing = await prisma.lokasiBarang.findUnique({ where: { id: rowId } });
   if (!existing) {
-    return NextResponse.json({ message: "Lokasi barang not found" }, { status: 404 });
+    return NextResponse.json({ message: "Lokasi barang tidak ditemukan" }, { status: 404 });
   }
 
   await prisma.lokasiBarang.delete({ where: { id: rowId } });
 
   return NextResponse.json({
-    message: "Lokasi barang deleted successfully",
-    description: `${existing.name} has been removed.`,
+    message: "Lokasi barang berhasil dihapus",
+    description: `${existing.name} telah dihapus.`,
   });
 }

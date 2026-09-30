@@ -10,34 +10,34 @@ export async function PATCH(
   try {
     decoded = verifyToken(req.headers.get("Authorization"));
   } catch {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ message: "Tidak terautentikasi" }, { status: 401 });
   }
 
   if (decoded.role !== "ADMIN") {
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ message: "Akses ditolak" }, { status: 403 });
   }
 
   const { id } = await params;
   const rowId = Number(id);
   if (!Number.isInteger(rowId)) {
-    return NextResponse.json({ message: "Invalid id" }, { status: 400 });
+    return NextResponse.json({ message: "Id tidak valid" }, { status: 400 });
   }
 
   const existing = await prisma.keadaanBarang.findUnique({ where: { id: rowId } });
   if (!existing) {
-    return NextResponse.json({ message: "Keadaan barang not found" }, { status: 404 });
+    return NextResponse.json({ message: "Keadaan barang tidak ditemukan" }, { status: 404 });
   }
 
   let body: Record<string, unknown>;
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ message: "Invalid request body" }, { status: 400 });
+    return NextResponse.json({ message: "Body request tidak valid" }, { status: 400 });
   }
 
   const name = body.name;
   if (typeof name !== "string" || name.trim() === "") {
-    return NextResponse.json({ message: "name is required" }, { status: 400 });
+    return NextResponse.json({ message: "nama wajib diisi" }, { status: 400 });
   }
 
   const trimmed = name.trim();
@@ -46,7 +46,7 @@ export async function PATCH(
   });
   if (dup) {
     return NextResponse.json(
-      { message: "Keadaan barang with that name already exists" },
+      { message: "Keadaan barang dengan nama tersebut sudah ada" },
       { status: 400 }
     );
   }
@@ -56,5 +56,5 @@ export async function PATCH(
     data: { name: trimmed },
   });
 
-  return NextResponse.json({ message: "Keadaan barang updated successfully" });
+  return NextResponse.json({ message: "Keadaan barang berhasil diperbarui" });
 }

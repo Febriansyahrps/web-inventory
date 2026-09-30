@@ -11,7 +11,7 @@ export async function GET(
   try {
     decoded = verifyToken(req.headers.get("Authorization"));
   } catch {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ message: "Tidak terautentikasi" }, { status: 401 });
   }
 
   // ADMIN and VIEWER both allowed — no further role gate needed.
@@ -19,7 +19,7 @@ export async function GET(
   const { id } = await params;
   const barangId = Number(id);
   if (!Number.isInteger(barangId)) {
-    return NextResponse.json({ message: "Invalid product id" }, { status: 400 });
+    return NextResponse.json({ message: "Id barang tidak valid" }, { status: 400 });
   }
 
   const row = await prisma.barang.findUnique({
@@ -28,7 +28,7 @@ export async function GET(
   });
 
   if (!row) {
-    return NextResponse.json({ message: "Product not found" }, { status: 404 });
+    return NextResponse.json({ message: "Barang tidak ditemukan" }, { status: 404 });
   }
 
   return NextResponse.json({ data: serializeBarang(row) });

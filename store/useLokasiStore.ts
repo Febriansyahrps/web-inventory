@@ -33,11 +33,14 @@ export const useLokasiStore = create<LokasiState>((set) => ({
     try {
       const token = Cookies.get("auth-token");
 
-      const { data } = await axios.get<{ data: Lokasi[] }>("/api/lokasi-barang", {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : undefined,
+      const { data } = await axios.get<{ data: Lokasi[] }>(
+        "/api/lokasi-barang",
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
         },
-      });
+      );
 
       set({ list: data.data, loading: false });
     } catch (err) {
@@ -46,7 +49,7 @@ export const useLokasiStore = create<LokasiState>((set) => ({
         error:
           axios.isAxiosError(err) && err.response?.data?.message
             ? err.response.data.message
-            : "Failed to fetch lokasi",
+            : "Gagal memuat data lokasi barang",
       });
     }
   },

@@ -10,11 +10,11 @@ export async function POST(req: Request) {
   try {
     decoded = verifyToken(req.headers.get("Authorization"));
   } catch {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ message: "Tidak terautentikasi" }, { status: 401 });
   }
 
   if (decoded.role !== "ADMIN") {
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ message: "Akses ditolak" }, { status: 403 });
   }
 
   // Only the scheduled trigger is activity-gated. Manual/admin calls always
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           message:
-            "No barang activity in the last 24 hours — backup email not sent.",
+            "Tidak ada aktivitas barang dalam 24 jam terakhir — email backup tidak dikirim.",
         },
         { status: 200 },
       );
@@ -45,13 +45,13 @@ export async function POST(req: Request) {
   try {
     const result = await sendBackupEmail(decoded.userId);
     return NextResponse.json({
-      message: "Backup email sent successfully",
+      message: "Email backup berhasil dikirim",
       ...result,
     });
   } catch (error) {
     return NextResponse.json(
       {
-        message: "Failed to send backup email",
+        message: "Gagal mengirim email backup",
         error: error instanceof Error ? error.message : String(error),
       },
       { status: 500 },

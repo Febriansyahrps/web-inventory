@@ -9,18 +9,18 @@ export async function POST(req: Request) {
   try {
     decoded = verifyToken(req.headers.get("Authorization"));
   } catch {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ message: "Tidak terautentikasi" }, { status: 401 });
   }
 
   if (decoded.role !== "ADMIN") {
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ message: "Akses ditolak" }, { status: 403 });
   }
 
   let body: Record<string, unknown>;
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ message: "Invalid request body" }, { status: 400 });
+    return NextResponse.json({ message: "Body request tidak valid" }, { status: 400 });
   }
 
   const username = body.username;
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
   if (typeof fullname !== "string" || fullname.trim() === "") missing.push("fullname");
   if (missing.length > 0) {
     return NextResponse.json(
-      { message: `Missing required field(s): ${missing.join(", ")}` },
+      { message: `Field wajib belum diisi: ${missing.join(", ")}` },
       { status: 400 }
     );
   }
@@ -52,24 +52,24 @@ export async function POST(req: Request) {
 
   if (pass !== repeat) {
     return NextResponse.json(
-      { message: "Password and repeat_password do not match" },
+      { message: "Password dan repeat_password tidak cocok" },
       { status: 400 }
     );
   }
 
   const roleId = Number(role);
   if (!Number.isInteger(roleId)) {
-    return NextResponse.json({ message: "role must be an integer" }, { status: 400 });
+    return NextResponse.json({ message: "role harus berupa bilangan bulat" }, { status: 400 });
   }
 
   const roleRow = await prisma.role.findUnique({ where: { id: roleId } });
   if (!roleRow) {
-    return NextResponse.json({ message: "Role not found" }, { status: 400 });
+    return NextResponse.json({ message: "Role tidak ditemukan" }, { status: 400 });
   }
 
   const existing = await prisma.user.findUnique({ where: { username: uname } });
   if (existing) {
-    return NextResponse.json({ message: "Username already exists" }, { status: 400 });
+    return NextResponse.json({ message: "Username sudah digunakan" }, { status: 400 });
   }
 
   const hashed = await bcrypt.hash(pass, 10);
@@ -96,7 +96,7 @@ export async function POST(req: Request) {
   });
 
   return NextResponse.json({
-    message: "User created successfully",
+    message: "Pengguna berhasil dibuat",
     data: user,
   });
 }

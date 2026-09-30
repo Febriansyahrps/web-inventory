@@ -8,14 +8,14 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ message: "Invalid request body" }, { status: 400 });
+    return NextResponse.json({ message: "Body request tidak valid" }, { status: 400 });
   }
 
   const { username, password } = body;
 
   if (!username || !password) {
     return NextResponse.json(
-      { message: "Username and password are required" },
+      { message: "Username dan password wajib diisi" },
       { status: 400 }
     );
   }
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
 
   if (!user) {
     return NextResponse.json(
-      { message: "Invalid username or password" },
+      { message: "Username atau password salah" },
       { status: 401 }
     );
   }
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) {
     return NextResponse.json(
-      { message: "Invalid username or password" },
+      { message: "Username atau password salah" },
       { status: 401 }
     );
   }
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
   } = user;
 
   return NextResponse.json({
-    message: "Login successful",
+    message: "Login berhasil",
     token,
     user: {
       ...userData,

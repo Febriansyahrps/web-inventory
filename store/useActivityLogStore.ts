@@ -88,7 +88,7 @@ export const useActivityLogStore = create<ActivityLogState>((set) => ({
         error:
           axios.isAxiosError(err) && err.response?.data?.message
             ? err.response.data.message
-            : "Failed to fetch activity log",
+            : "Gagal memuat data log aktivitas",
       });
     }
   },

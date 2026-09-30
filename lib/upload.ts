@@ -38,7 +38,7 @@ function publicBaseUrl(): string {
 
 export async function savePhoto(file: File): Promise<string> {
   const ext = ALLOWED_MIME[file.type];
-  if (!ext) throw new Error("foto must be a JPEG, PNG, or WebP image");
+  if (!ext) throw new Error("foto harus berupa gambar JPEG, PNG, atau WebP");
 
   const key = `${OBJECT_PREFIX}/${Date.now()}-${crypto.randomBytes(8).toString("hex")}${ext}`;
 

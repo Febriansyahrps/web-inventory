@@ -89,7 +89,7 @@ export const useUserStore = create<UserState>((set) => ({
         error:
           axios.isAxiosError(err) && err.response?.data?.message
             ? err.response.data.message
-            : "Failed to fetch users",
+            : "Gagal memuat data pengguna",
       });
     }
   },

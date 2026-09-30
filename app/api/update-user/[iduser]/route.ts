@@ -6,35 +6,47 @@ import { logActivity } from "@/lib/activityLog";
 
 export async function PATCH(
   req: Request,
-  { params }: { params: Promise<{ iduser: string }> }
+  { params }: { params: Promise<{ iduser: string }> },
 ) {
   let decoded;
   try {
     decoded = verifyToken(req.headers.get("Authorization"));
   } catch {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { message: "Tidak terautentikasi" },
+      { status: 401 },
+    );
   }
 
   if (decoded.role !== "ADMIN") {
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ message: "Akses ditolak" }, { status: 403 });
   }
 
   const { iduser } = await params;
   const id = Number(iduser);
   if (!Number.isInteger(id)) {
-    return NextResponse.json({ message: "Invalid user id" }, { status: 400 });
+    return NextResponse.json(
+      { message: "Id pengguna tidak valid" },
+      { status: 400 },
+    );
   }
 
   const existing = await prisma.user.findUnique({ where: { id } });
   if (!existing) {
-    return NextResponse.json({ message: "User not found" }, { status: 404 });
+    return NextResponse.json(
+      { message: "Pengguna tidak ditemukan" },
+      { status: 404 },
+    );
   }
 
   let body: Record<string, unknown>;
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ message: "Invalid request body" }, { status: 400 });
+    return NextResponse.json(
+      { message: "Body request tidak valid" },
+      { status: 400 },
+    );
   }
 
   const username = body.username;
@@ -54,15 +66,18 @@ export async function PATCH(
   if (username !== undefined) {
     if (typeof username !== "string" || username.trim() === "") {
       return NextResponse.json(
-        { message: "username must be a non-empty string" },
-        { status: 400 }
+        { message: "username harus diisi " },
+        { status: 400 },
       );
     }
     const unameTaken = await prisma.user.findUnique({
       where: { username: username as string },
     });
     if (unameTaken && unameTaken.id !== id) {
-      return NextResponse.json({ message: "Username already exists" }, { status: 400 });
+      return NextResponse.json(
+        { message: "Username sudah digunakan" },
+        { status: 400 },
+      );
     }
     data.username = username as string;
   }
@@ -71,8 +86,8 @@ export async function PATCH(
   if (fullname !== undefined) {
     if (typeof fullname !== "string" || fullname.trim() === "") {
       return NextResponse.json(
-        { message: "fullname must be a non-empty string" },
-        { status: 400 }
+        { message: "fullname harus diisi" },
+        { status: 400 },
       );
     }
     data.fullname = fullname as string;
@@ -82,50 +97,59 @@ export async function PATCH(
   if (password !== undefined) {
     if (typeof password !== "string" || password === "") {
       return NextResponse.json(
-        { message: "password must be a non-empty string" },
-        { status: 400 }
+        { message: "password harus diisi" },
+        { status: 400 },
       );
     }
     if (typeof repeat_password !== "string" || repeat_password === "") {
       return NextResponse.json(
-        { message: "repeat_password is required when password is provided" },
-        { status: 400 }
+        { message: "Ulangi password wajib diisi saat password terisi" },
+        { status: 400 },
       );
     }
     if (password !== repeat_password) {
       return NextResponse.json(
-        { message: "Password and repeat_password do not match" },
-        { status: 400 }
+        { message: "Password dan ulangi password tidak cocok" },
+        { status: 400 },
       );
     }
     data.password = await bcrypt.hash(password, 10);
   } else if (repeat_password !== undefined) {
     return NextResponse.json(
-      { message: "repeat_password provided without password" },
-      { status: 400 }
+      { message: "Ulangi password diisi tanpa password" },
+      { status: 400 },
     );
   }
 
   // role provided → validate existence
   if (role !== undefined) {
     if (typeof role !== "number" && typeof role !== "string") {
-      return NextResponse.json({ message: "role must be an integer" }, { status: 400 });
+      return NextResponse.json(
+        { message: "role harus sesuai data" },
+        { status: 400 },
+      );
     }
     const roleId = Number(role);
     if (!Number.isInteger(roleId)) {
-      return NextResponse.json({ message: "role must be an integer" }, { status: 400 });
+      return NextResponse.json(
+        { message: "role harus sesuai data" },
+        { status: 400 },
+      );
     }
     const roleRow = await prisma.role.findUnique({ where: { id: roleId } });
     if (!roleRow) {
-      return NextResponse.json({ message: "Role not found" }, { status: 400 });
+      return NextResponse.json(
+        { message: "Role tidak ditemukan" },
+        { status: 400 },
+      );
     }
     data.idRole = roleId;
   }
 
   if (Object.keys(data).length === 0) {
     return NextResponse.json(
-      { message: "No fields to update" },
-      { status: 400 }
+      { message: "Tidak ada field untuk diperbarui" },
+      { status: 400 },
     );
   }
 
@@ -139,8 +163,9 @@ export async function PATCH(
     action: "UPDATE",
     entity: "USER",
     entityId: id,
-    label: typeof data.username === "string" ? data.username : existing.username,
+    label:
+      typeof data.username === "string" ? data.username : existing.username,
   });
 
-  return NextResponse.json({ message: "User updated successfully" });
+  return NextResponse.json({ message: "Pengguna berhasil diperbarui" });
 }

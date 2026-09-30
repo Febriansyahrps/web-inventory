@@ -21,29 +21,29 @@ export async function PATCH(
   try {
     decoded = verifyToken(req.headers.get("Authorization"));
   } catch {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ message: "Tidak terautentikasi" }, { status: 401 });
   }
 
   if (decoded.role !== "ADMIN") {
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    return NextResponse.json({ message: "Akses ditolak" }, { status: 403 });
   }
 
   const { idbarang } = await params;
   const id = Number(idbarang);
   if (!Number.isInteger(id)) {
-    return NextResponse.json({ message: "Invalid product id" }, { status: 400 });
+    return NextResponse.json({ message: "Id barang tidak valid" }, { status: 400 });
   }
 
   const existing = await prisma.barang.findUnique({ where: { id } });
   if (!existing) {
-    return NextResponse.json({ message: "Product not found" }, { status: 404 });
+    return NextResponse.json({ message: "Barang tidak ditemukan" }, { status: 404 });
   }
 
   let form: FormData;
   try {
     form = await req.formData();
   } catch {
-    return NextResponse.json({ message: "Invalid multipart body" }, { status: 400 });
+    return NextResponse.json({ message: "Body multipart tidak valid" }, { status: 400 });
   }
 
   const get = (k: string): string | undefined => {
@@ -60,7 +60,7 @@ export async function PATCH(
     const v = get(field);
     if (v === undefined || v.trim() === "") {
       return NextResponse.json(
-        { message: `${field} cannot be empty` },
+        { message: `${field} tidak boleh kosong` },
         { status: 400 }
       );
     }
@@ -74,7 +74,7 @@ export async function PATCH(
     const n = Number(v);
     if (v === undefined || v === "" || Number.isNaN(n) || n < 0) {
       return NextResponse.json(
-        { message: `${field} must be a non-negative number` },
+        { message: `${field} harus berupa angka non-negatif` },
         { status: 400 }
       );
     }
@@ -101,7 +101,7 @@ export async function PATCH(
       const n = Number(v);
       if (Number.isNaN(n)) {
         return NextResponse.json(
-          { message: `${NULLABLE_INT} must be an integer` },
+          { message: `${NULLABLE_INT} harus berupa bilangan bulat` },
           { status: 400 }
         );
       }
@@ -123,7 +123,7 @@ export async function PATCH(
     const n = Number(v);
     if (v === undefined || v === "" || !Number.isInteger(n) || n <= 0) {
       return NextResponse.json(
-        { message: `${apiField} must be a positive integer` },
+        { message: `${apiField} harus berupa bilangan bulat positif` },
         { status: 400 }
       );
     }
@@ -143,7 +143,7 @@ export async function PATCH(
       if (!row) {
         const apiName = Object.keys(fkFields).find((k) => fkFields[k] === prismaField);
         return NextResponse.json(
-          { message: `Referenced row not found for: ${apiName}` },
+          { message: `Data referensi tidak ditemukan untuk: ${apiName}` },
           { status: 400 }
         );
       }
@@ -156,7 +156,7 @@ export async function PATCH(
 
   if (fotoFile instanceof File && deleteFoto === "true") {
     return NextResponse.json(
-      { message: "Provide either foto or delete_foto, not both" },
+      { message: "Isi salah satu antara foto atau delete_foto, tidak keduanya" },
       { status: 400 }
     );
   }
@@ -182,7 +182,7 @@ export async function PATCH(
   // Neither provided → fotoBarang untouched.
 
   if (Object.keys(data).length === 0) {
-    return NextResponse.json({ message: "No fields to update" }, { status: 400 });
+    return NextResponse.json({ message: "Tidak ada field untuk diperbarui" }, { status: 400 });
   }
 
   await prisma.barang.update({ where: { id }, data });
@@ -196,7 +196,7 @@ export async function PATCH(
       typeof data.namaBarang === "string" ? data.namaBarang : existing.namaBarang,
   });
 
-  return NextResponse.json({ message: "Product updated successfully" });
+  return NextResponse.json({ message: "Barang berhasil diperbarui" });
 }
 
 // Maps snake_case form field to Prisma column field.
