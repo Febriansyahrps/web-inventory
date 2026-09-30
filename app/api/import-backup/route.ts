@@ -107,16 +107,16 @@ const barangWriteData = (row: CsvRow): Prisma.BarangUncheckedCreateInput => {
     idAsalBarang: asOptionalInt(cell(row, "id_asal_barang")),
     idKeadaanBarang: asOptionalInt(cell(row, "id_keadaan_barang")),
     idSatuanBarang: asOptionalInt(cell(row, "id_satuan_barang")),
-    kodeBarang: cell(row, "kode_barang"),
-    noRegister: cell(row, "no_register"),
+    kodeBarang: optionalString("kode_barang"),
+    noRegister: optionalString("no_register"),
     namaBarang: cell(row, "nama_barang"),
     merkBarang: optionalString("merk_barang"),
     noSertifikat: optionalString("no_sertifikat"),
     bahan: optionalString("bahan"),
     tahunPerolehan: asOptionalInt(cell(row, "tahun_perolehan")) ?? null,
     ukuranBarang: optionalString("ukuran_barang"),
-    jumlahBarang: Number(cell(row, "jumlah_barang")),
-    hargaBarang: cell(row, "harga_barang"),
+    jumlahBarang: asOptionalInt(cell(row, "jumlah_barang")) ?? null,
+    hargaBarang: optionalString("harga_barang"),
     fotoBarang: optionalString("foto_barang"),
   };
 
@@ -292,17 +292,17 @@ export async function POST(req: Request) {
       }
     }
 
-    // no_register is optional — rows are imported with whatever the CSV holds.
-    if (cell(row, "kode_barang") === "") add("Field wajib belum diisi: kode_barang");
+    // Only nama_barang is required — kode_barang, no_register, jumlah and
+    // harga are optional and imported as whatever the CSV holds.
     if (cell(row, "nama_barang") === "") add("Field wajib belum diisi: nama_barang");
 
     const jumlah = cell(row, "jumlah_barang");
-    if (jumlah === "" || !Number.isInteger(Number(jumlah)) || Number(jumlah) < 0) {
+    if (jumlah !== "" && (!Number.isInteger(Number(jumlah)) || Number(jumlah) < 0)) {
       add("jumlah_barang harus berupa bilangan bulat non-negatif");
     }
 
     const harga = cell(row, "harga_barang");
-    if (harga === "" || Number.isNaN(Number(harga)) || Number(harga) < 0) {
+    if (harga !== "" && (Number.isNaN(Number(harga)) || Number(harga) < 0)) {
       add("harga_barang harus berupa angka non-negatif");
     }
 
@@ -370,7 +370,7 @@ export async function POST(req: Request) {
     action: "CREATE",
     entity: "BACKUP",
     entityId: null,
-    label: `Imported ${upload.name}`,
+    label: `dari file ${upload.name}`,
   });
 
   return NextResponse.json({

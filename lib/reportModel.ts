@@ -157,7 +157,7 @@ export const REPORT_COLUMNS: ReportColumn[] = [
     title: "Harga",
     weight: 1.36,
     align: "right",
-    raw: (row) => row.hargaBarang.toNumber(),
+    raw: (row) => row.hargaBarang?.toNumber() ?? null,
     numFmt: "#,##0",
     display: currency,
   },

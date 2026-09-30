@@ -29,88 +29,89 @@ export async function POST(req: Request) {
     return typeof v === "string" ? v : undefined;
   };
 
-  // ---- Field validation ----
-  const missing: string[] = [];
-  const idKategoriBarang = get("id_kategori_barang");
-  const idLokasiBarang = get("id_lokasi_barang");
-  const idAsalBarang = get("id_asal_barang");
-  const idKeadaanBarang = get("id_keadaan_barang");
-  const idSatuanBarang = get("id_satuan_barang");
-  const kodeBarang = get("kode_barang");
-  const noRegister = get("no_register");
+  // ---- Field validation (only nama_barang is required) ----
   const namaBarang = get("nama_barang");
-  const jumlahBarang = get("jumlah_barang");
-  const hargaBarang = get("harga_barang");
-
-  if (!idKategoriBarang) missing.push("id_kategori_barang");
-  if (!idAsalBarang) missing.push("id_asal_barang");
-  if (!idKeadaanBarang) missing.push("id_keadaan_barang");
-  if (!idSatuanBarang) missing.push("id_satuan_barang");
-  if (!kodeBarang) missing.push("kode_barang");
-  if (!noRegister) missing.push("no_register");
-  if (!namaBarang) missing.push("nama_barang");
-  if (!jumlahBarang) missing.push("jumlah_barang");
-  if (!hargaBarang) missing.push("harga_barang");
-
-  if (missing.length > 0) {
+  if (namaBarang === undefined || namaBarang.trim() === "") {
     return NextResponse.json(
-      { message: `Field wajib belum diisi: ${missing.join(", ")}` },
+      { message: "Field wajib belum diisi: nama_barang" },
       { status: 400 }
     );
   }
 
-  const idKat = Number(idKategoriBarang);
-  const idAsal = Number(idAsalBarang);
-  const idKead = Number(idKeadaanBarang);
-  const idSatu = Number(idSatuanBarang);
-  const jumlah = Number(jumlahBarang);
-  const harga = Number(hargaBarang);
-
-  // id_lokasi_barang is optional: absent/empty means "no location".
-  const lokasiRaw = idLokasiBarang?.trim() ?? "";
-  let idLokasi: number | null = null;
-  if (lokasiRaw !== "") {
-    idLokasi = Number(lokasiRaw);
-    if (!Number.isInteger(idLokasi) || idLokasi <= 0) {
+  // FK fields are optional: absent/empty means "not set", otherwise a positive int.
+  const fkFields: Record<string, string> = {
+    id_kategori_barang: "idKategoriBarang",
+    id_lokasi_barang: "idLokasiBarang",
+    id_asal_barang: "idAsalBarang",
+    id_keadaan_barang: "idKeadaanBarang",
+    id_satuan_barang: "idSatuanBarang",
+  };
+  const fkValues: Record<string, number | null> = {};
+  for (const apiField of Object.keys(fkFields)) {
+    const raw = get(apiField);
+    if (raw === undefined || raw.trim() === "") {
+      fkValues[apiField] = null;
+      continue;
+    }
+    const n = Number(raw);
+    if (!Number.isInteger(n) || n <= 0) {
       return NextResponse.json(
-        { message: "id_lokasi_barang harus berupa bilangan bulat" },
+        { message: `${apiField} harus berupa bilangan bulat positif` },
         { status: 400 }
       );
     }
+    fkValues[apiField] = n;
   }
 
-  if (!Number.isInteger(idKat) || !Number.isInteger(idAsal) || !Number.isInteger(idKead) || !Number.isInteger(idSatu)) {
+  // Referenced rows must exist when an FK was provided.
+  const fkModels: Record<
+    string,
+    { findUnique: (a: { where: { id: number } }) => Promise<unknown> }
+  > = {
+    id_kategori_barang: prisma.kategoriBarang,
+    id_lokasi_barang: prisma.lokasiBarang,
+    id_asal_barang: prisma.asalBarang,
+    id_keadaan_barang: prisma.keadaanBarang,
+    id_satuan_barang: prisma.satuanBarang,
+  };
+  const missingRefs: string[] = [];
+  for (const [apiField, model] of Object.entries(fkModels)) {
+    const refId = fkValues[apiField];
+    if (refId === null) continue;
+    const row = await model.findUnique({ where: { id: refId } });
+    if (!row) missingRefs.push(apiField);
+  }
+  if (missingRefs.length > 0) {
     return NextResponse.json(
-      { message: "id_kategori_barang, id_asal_barang, id_keadaan_barang, id_satuan_barang harus berupa bilangan bulat" },
+      { message: `Data referensi tidak ditemukan untuk: ${missingRefs.join(", ")}` },
       { status: 400 }
     );
   }
-  if (!Number.isInteger(jumlah) || jumlah < 0) {
-    return NextResponse.json({ message: "jumlah_barang harus berupa bilangan bulat non-negatif" }, { status: 400 });
-  }
-  if (Number.isNaN(harga) || harga < 0) {
-    return NextResponse.json({ message: "harga_barang harus berupa angka non-negatif" }, { status: 400 });
-  }
 
-  // FK existence checks
-  const [katRow, lokasiRow, asalRow, keadRow, satuRow] = await Promise.all([
-    prisma.kategoriBarang.findUnique({ where: { id: idKat } }),
-    idLokasi ? prisma.lokasiBarang.findUnique({ where: { id: idLokasi } }) : null,
-    prisma.asalBarang.findUnique({ where: { id: idAsal } }),
-    prisma.keadaanBarang.findUnique({ where: { id: idKead } }),
-    prisma.satuanBarang.findUnique({ where: { id: idSatu } }),
-  ]);
-  if (!katRow || (idLokasi && !lokasiRow) || !asalRow || !keadRow || !satuRow) {
-    const bad: string[] = [];
-    if (!katRow) bad.push("id_kategori_barang");
-    if (idLokasi && !lokasiRow) bad.push("id_lokasi_barang");
-    if (!asalRow) bad.push("id_asal_barang");
-    if (!keadRow) bad.push("id_keadaan_barang");
-    if (!satuRow) bad.push("id_satuan_barang");
-    return NextResponse.json(
-      { message: `Data referensi tidak ditemukan untuk: ${bad.join(", ")}` },
-      { status: 400 }
-    );
+  // Numeric fields are optional: absent/empty means null.
+  const optionalNumber = (
+    field: string,
+    integer: boolean
+  ): { value: number | null } | { error: string } => {
+    const raw = get(field);
+    if (raw === undefined || raw.trim() === "") return { value: null };
+    const n = Number(raw);
+    if (Number.isNaN(n) || n < 0 || (integer && !Number.isInteger(n))) {
+      return {
+        error: integer
+          ? `${field} harus berupa bilangan bulat non-negatif`
+          : `${field} harus berupa angka non-negatif`,
+      };
+    }
+    return { value: n };
+  };
+  const jumlah = optionalNumber("jumlah_barang", true);
+  if ("error" in jumlah) {
+    return NextResponse.json({ message: jumlah.error }, { status: 400 });
+  }
+  const harga = optionalNumber("harga_barang", false);
+  if ("error" in harga) {
+    return NextResponse.json({ message: harga.error }, { status: 400 });
   }
 
   // ---- Photo upload (optional) ----
@@ -128,18 +129,20 @@ export async function POST(req: Request) {
   }
 
   const optional = (v: string | undefined) => (v === undefined ? null : v);
+  const optionalText = (v: string | undefined) =>
+    v === undefined || v.trim() === "" ? null : v;
 
   const barang = await prisma.barang.create({
     data: {
       idUser: decoded.userId,
-      idKategoriBarang: idKat,
-      idLokasiBarang: idLokasi,
-      idAsalBarang: idAsal,
-      idKeadaanBarang: idKead,
-      idSatuanBarang: idSatu,
-      kodeBarang: kodeBarang!,
-      noRegister: noRegister!,
-      namaBarang: namaBarang!,
+      idKategoriBarang: fkValues.id_kategori_barang,
+      idLokasiBarang: fkValues.id_lokasi_barang,
+      idAsalBarang: fkValues.id_asal_barang,
+      idKeadaanBarang: fkValues.id_keadaan_barang,
+      idSatuanBarang: fkValues.id_satuan_barang,
+      kodeBarang: optionalText(get("kode_barang")),
+      noRegister: optionalText(get("no_register")),
+      namaBarang: namaBarang,
       merkBarang: optional(get("merk_barang")),
       noSertifikat: optional(get("no_sertifikat")),
       bahan: optional(get("bahan")),
@@ -149,8 +152,8 @@ export async function POST(req: Request) {
         return v && !Number.isNaN(n) ? n : null;
       })(),
       ukuranBarang: optional(get("ukuran_barang")),
-      jumlahBarang: jumlah,
-      hargaBarang: harga,
+      jumlahBarang: jumlah.value,
+      hargaBarang: harga.value,
       fotoBarang: fotoPath,
     },
     include: barangInclude,

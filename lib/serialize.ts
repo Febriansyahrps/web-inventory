@@ -22,7 +22,7 @@ export function serializeBarang(row: BarangWithRelations) {
     tahun_perolehan: row.tahunPerolehan,
     ukuran_barang: row.ukuranBarang,
     jumlah_barang: row.jumlahBarang,
-    harga_barang: row.hargaBarang.toNumber(),
+    harga_barang: row.hargaBarang?.toNumber() ?? null,
     foto_barang: row.fotoBarang,
     kategori_barang: row.kategoriBarang
       ? { id: row.kategoriBarang.id, name: row.kategoriBarang.name }

@@ -41,6 +41,7 @@ const RecentAddedSection = () => {
       dataIndex: "jumlah_barang",
       key: "jumlah_barang",
       className: "max-[991px]:hidden!",
+      render: (value: number | null) => value ?? "-",
     },
   ];
 

@@ -15,10 +15,10 @@ export interface DashboardBreakdown {
 // A row of the `recent` list from /api/dashboard-data.
 export interface DashboardRecentProduct {
   id: number;
-  kode_barang: string;
+  kode_barang: string | null;
   nama_barang: string;
   kategori_barang: { id: number; name: string } | null;
-  jumlah_barang: number;
+  jumlah_barang: number | null;
   created_at: string;
 }
 

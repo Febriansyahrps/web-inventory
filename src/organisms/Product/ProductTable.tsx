@@ -14,9 +14,9 @@ import { useScreenDefine } from "@/src/utils/screenDefine";
 type productRow = {
   key: number;
   created_at: string;
-  kode_barang: string;
+  kode_barang: string | null;
   nama_barang: string;
-  no_register: string;
+  no_register: string | null;
   merk_barang: string | null;
   kategori_barang: string;
   lokasi_barang: string;
@@ -24,8 +24,8 @@ type productRow = {
   keadaan_barang: string;
   satuan_barang: string;
   tahun_perolehan: number | null;
-  jumlah_barang: number;
-  harga_barang: number;
+  jumlah_barang: number | null;
+  harga_barang: number | null;
   action: Product;
 };
 
@@ -160,6 +160,7 @@ const ProductTable = () => {
       sorter: true,
       responsive: ["md"],
       width: 140,
+      render: (value: string | null) => value ?? "-",
     },
     {
       title: "No. Register",
@@ -168,6 +169,7 @@ const ProductTable = () => {
       sorter: true,
       responsive: ["md"],
       width: 140,
+      render: (value: string | null) => value ?? "-",
     },
     {
       title: "Merk",
@@ -234,6 +236,7 @@ const ProductTable = () => {
       sorter: true,
       responsive: ["md"],
       width: 100,
+      render: (value: number | null) => value ?? "-",
     },
     {
       title: "Harga",
@@ -242,7 +245,8 @@ const ProductTable = () => {
       sorter: true,
       responsive: ["md"],
       width: 150,
-      render: (value: number) => `Rp ${value.toLocaleString("id-ID")}`,
+      render: (value: number | null) =>
+        value === null ? "-" : `Rp ${value.toLocaleString("id-ID")}`,
     },
     {
       title: "Aksi",
@@ -328,6 +332,8 @@ const ProductTable = () => {
             total: totalProduct,
             pageSize: limit,
             current: page,
+            showSizeChanger: true,
+            pageSizeOptions: [10, 20, 50, 100],
           }}
           loading={loading}
           onChange={handleTableChange}

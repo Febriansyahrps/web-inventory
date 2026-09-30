@@ -31,20 +31,20 @@ import { useEffect, useRef, useState } from "react";
 
 interface ProductFormValues {
   nama_barang: string;
-  kode_barang: string;
-  no_register: string;
-  id_kategori_barang: number;
+  kode_barang?: string;
+  no_register?: string;
+  id_kategori_barang?: number;
   id_lokasi_barang?: number;
-  id_asal_barang: number;
-  id_keadaan_barang: number;
-  id_satuan_barang: number;
+  id_asal_barang?: number;
+  id_keadaan_barang?: number;
+  id_satuan_barang?: number;
   merk_barang?: string;
   no_sertifikat?: string;
   bahan?: string;
   tahun_perolehan?: number;
   ukuran_barang?: string;
-  jumlah_barang: number;
-  harga_barang: number;
+  jumlah_barang?: number;
+  harga_barang?: number;
   foto?: UploadFile[];
 }
 
@@ -56,11 +56,20 @@ interface ProductFormProps {
 // On update, an empty value here clears the column to null; for every other
 // field an empty value is left out so the API doesn't reject it.
 const CLEARABLE_ON_UPDATE = [
+  "kode_barang",
+  "no_register",
+  "id_kategori_barang",
+  "id_lokasi_barang",
+  "id_asal_barang",
+  "id_keadaan_barang",
+  "id_satuan_barang",
   "merk_barang",
   "no_sertifikat",
   "bahan",
   "ukuran_barang",
   "tahun_perolehan",
+  "jumlah_barang",
+  "harga_barang",
 ];
 
 // Upload owns its fileList, so pull it out of the raw change event for the form.
@@ -156,8 +165,8 @@ const ProductForm = ({ isAddProduct = true, productId }: ProductFormProps) => {
 
         form.setFieldsValue({
           nama_barang: product.nama_barang,
-          kode_barang: product.kode_barang,
-          no_register: product.no_register,
+          kode_barang: product.kode_barang ?? undefined,
+          no_register: product.no_register ?? undefined,
           no_sertifikat: product.no_sertifikat ?? undefined,
           id_kategori_barang: product.kategori_barang?.id,
           id_lokasi_barang: product.lokasi_barang?.id,
@@ -168,8 +177,8 @@ const ProductForm = ({ isAddProduct = true, productId }: ProductFormProps) => {
           bahan: product.bahan ?? undefined,
           ukuran_barang: product.ukuran_barang ?? undefined,
           tahun_perolehan: product.tahun_perolehan ?? undefined,
-          jumlah_barang: product.jumlah_barang,
-          harga_barang: product.harga_barang,
+          jumlah_barang: product.jumlah_barang ?? undefined,
+          harga_barang: product.harga_barang ?? undefined,
           foto,
         });
         setExistingPhoto(product.foto_barang);

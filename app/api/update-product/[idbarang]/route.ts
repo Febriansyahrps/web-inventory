@@ -4,12 +4,19 @@ import { verifyToken } from "@/lib/auth";
 import { savePhoto, deletePhoto } from "@/lib/upload";
 import { logActivity } from "@/lib/activityLog";
 
-// Required (NOT NULL) text columns — cannot be cleared to null.
-const REQUIRED_TEXT = ["kode_barang", "no_register", "nama_barang"] as const;
-// Required numeric columns — 0 is invalid as a "clear" signal.
-const REQUIRED_NUM = ["jumlah_barang", "harga_barang"] as const;
+// Required (NOT NULL) text column — cannot be cleared to null.
+const REQUIRED_TEXT = ["nama_barang"] as const;
 // Nullable text columns — empty string clears to null.
-const NULLABLE_TEXT = ["merk_barang", "no_sertifikat", "bahan", "ukuran_barang"] as const;
+const NULLABLE_TEXT = [
+  "kode_barang",
+  "no_register",
+  "merk_barang",
+  "no_sertifikat",
+  "bahan",
+  "ukuran_barang",
+] as const;
+// Nullable numeric columns — empty string clears to null.
+const NULLABLE_NUM = ["jumlah_barang", "harga_barang"] as const;
 // Nullable int column — 0 clears to null.
 const NULLABLE_INT = "tahun_perolehan";
 
@@ -67,14 +74,23 @@ export async function PATCH(
     data[fieldToPrisma(field)] = v;
   }
 
-  // ---- Required numeric fields: present → must parse to a valid non-negative number ----
-  for (const field of REQUIRED_NUM) {
+  // ---- Nullable numeric fields: empty clears to null, else a non-negative number ----
+  for (const field of NULLABLE_NUM) {
     if (!has(field)) continue;
     const v = get(field);
+    if (v === undefined || v.trim() === "") {
+      data[fieldToPrisma(field)] = null;
+      continue;
+    }
     const n = Number(v);
-    if (v === undefined || v === "" || Number.isNaN(n) || n < 0) {
+    if (Number.isNaN(n) || n < 0 || (field === "jumlah_barang" && !Number.isInteger(n))) {
       return NextResponse.json(
-        { message: `${field} harus berupa angka non-negatif` },
+        {
+          message:
+            field === "jumlah_barang"
+              ? "jumlah_barang harus berupa bilangan bulat non-negatif"
+              : "harga_barang harus berupa angka non-negatif",
+        },
         { status: 400 }
       );
     }
@@ -120,8 +136,12 @@ export async function PATCH(
   for (const [apiField, prismaField] of Object.entries(fkFields)) {
     if (!has(apiField)) continue;
     const v = get(apiField);
+    if (v === undefined || v.trim() === "") {
+      data[prismaField] = null;
+      continue;
+    }
     const n = Number(v);
-    if (v === undefined || v === "" || !Number.isInteger(n) || n <= 0) {
+    if (!Number.isInteger(n) || n <= 0) {
       return NextResponse.json(
         { message: `${apiField} harus berupa bilangan bulat positif` },
         { status: 400 }
@@ -138,8 +158,9 @@ export async function PATCH(
     idSatuanBarang: prisma.satuanBarang,
   };
   for (const [prismaField, model] of Object.entries(modelByField)) {
-    if (data[prismaField] !== undefined) {
-      const row = await model.findUnique({ where: { id: data[prismaField] as number } });
+    const refId = data[prismaField];
+    if (refId !== undefined && refId !== null) {
+      const row = await model.findUnique({ where: { id: refId as number } });
       if (!row) {
         const apiName = Object.keys(fkFields).find((k) => fkFields[k] === prismaField);
         return NextResponse.json(

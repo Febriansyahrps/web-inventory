@@ -137,6 +137,8 @@ const ActivityLogTable = () => {
             total: totalLog,
             pageSize: limit,
             current: page,
+            showSizeChanger: true,
+            pageSizeOptions: [10, 20, 50, 100],
           }}
           loading={loading}
           onChange={handleTableChange}

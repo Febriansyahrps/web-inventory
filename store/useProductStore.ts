@@ -7,16 +7,16 @@ import { create } from "zustand";
 // Product row shape returned by /api/product (see lib/serialize.ts)
 export interface Product {
   id: number;
-  kode_barang: string;
-  no_register: string;
+  kode_barang: string | null;
+  no_register: string | null;
   nama_barang: string;
   merk_barang: string | null;
   no_sertifikat: string | null;
   bahan: string | null;
   tahun_perolehan: number | null;
   ukuran_barang: string | null;
-  jumlah_barang: number;
-  harga_barang: number;
+  jumlah_barang: number | null;
+  harga_barang: number | null;
   foto_barang: string | null;
   kategori_barang: { id: number; name: string } | null;
   lokasi_barang: { id: number; name: string } | null;
