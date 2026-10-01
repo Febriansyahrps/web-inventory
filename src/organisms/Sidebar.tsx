@@ -47,14 +47,14 @@ const Sidebar = ({
         <Link href={"/"}>
           <div className="flex gap-2 items-center">
             <Image
-              src="/assets/SMK Taman Siswa Banjarnegara.png"
-              alt="SMK Taman Siswa Banjarnegara"
+              src="/assets/SMK Tamansiswa Banjarnegara.png"
+              alt="SMK Tamansiswa Banjarnegara"
               width={50}
               preview={false}
             />
             {!collapsed && (
               <p className="font-medium text-black">
-                SMK Taman Siswa Banjarnegara
+                SMK Tamansiswa Banjarnegara
               </p>
             )}
           </div>

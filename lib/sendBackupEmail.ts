@@ -32,7 +32,7 @@ export async function sendBackupEmail(
   const { data, error } = await resend.emails.send({
     from: FROM_ADDRESS,
     to: recipient,
-    subject: `Data Backup Inventaris SMK Taman Siswa Banjarnegara — ${sentAt.slice(0, 10)}`,
+    subject: `Data Backup Inventaris SMK Tamansiswa Banjarnegara — ${sentAt.slice(0, 10)}`,
     text: "Sistem telah berhasil melakukan pencadangan data inventaris terbaru. Silakan unduh berkas ZIP (file CSV) terlampir untuk kebutuhan arsip Anda.",
     attachments: [{ filename, content: buffer.toString("base64") }],
   });

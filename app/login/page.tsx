@@ -66,7 +66,7 @@ export default function LoginPage() {
           <div className="flex flex-col gap-1 items-start">
             <h1 className="text-2xl font-bold text-gray-900">Selamat Datang</h1>
             <p className="text-sm text-gray-500">
-              Sistem Inventaris SMK Taman Siswa Banjarnegara
+              Sistem Inventaris SMK Tamansiswa Banjarnegara
             </p>
           </div>
         </div>
