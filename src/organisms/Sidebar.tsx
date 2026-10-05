@@ -93,7 +93,6 @@ const Sidebar = ({
             onClick: () => {
               router.push("/akun");
             },
-            className: role === "1" ? "" : "hidden!",
           },
           {
             key: "/riwayat",

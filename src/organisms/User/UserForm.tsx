@@ -36,9 +36,11 @@ const UserForm = ({ isAddUser = true, userId }: UserFormProps) => {
   const isAdd = isAddUser;
   const router = useRouter();
   // Role cookie holds the role id; "1" is ADMIN. Same gate as Header/UserTable.
-  // Non-admins get a read-only view (the add/update routes reject them).
-  const readOnly = useCookie("role") !== "1";
+  // Non-admins may edit their own account, but never the role field.
+  const isAdmin = useCookie("role") === "1";
   const currentUserId = Number(useCookie("user-id"));
+  const isSelf = !isAdd && userId === currentUserId;
+  const readOnly = !isAdmin && !isSelf;
   const [form] = Form.useForm<UserFormValues>();
   const [loading, setLoading] = useState(false);
   // Starts true when editing so the detail fetch never setState synchronously.
@@ -111,8 +113,11 @@ const UserForm = ({ isAddUser = true, userId }: UserFormProps) => {
       const payload: Record<string, string | number> = {
         username: values.username,
         fullname: values.fullname,
-        role: values.role,
       };
+      // Only admins may change the role; self-edits never send it.
+      if (isAdmin) {
+        payload.role = values.role as number;
+      }
       if (values.password) {
         payload.password = values.password;
         payload.repeat_password = values.repeat_password as string;
@@ -197,7 +202,7 @@ const UserForm = ({ isAddUser = true, userId }: UserFormProps) => {
       >
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-semibold ">
-            {isAdd ? "Tambah Akun" : "Detail Akun"}
+            {isAdd ? "Tambah Akun" : isSelf ? "Detail Akun Saya" : "Detail Akun"}
           </h1>
           {!isAdd && !readOnly && userId !== currentUserId && (
             <Button
@@ -240,20 +245,22 @@ const UserForm = ({ isAddUser = true, userId }: UserFormProps) => {
               />
             </Form.Item>
           </Col>
-          <Col xs={24} md={12}>
-            <Form.Item
-              label="Role"
-              name="role"
-              rules={[{ required: true, message: "Mohon pilih role!" }]}
-            >
-              <Select
-                size="large"
-                placeholder="Pilih role akun"
-                options={ROLE_OPTIONS}
-                disabled={readOnly}
-              />
-            </Form.Item>
-          </Col>
+          {isAdmin && (
+            <Col xs={24} md={12}>
+              <Form.Item
+                label="Role"
+                name="role"
+                rules={[{ required: true, message: "Mohon pilih role!" }]}
+              >
+                <Select
+                  size="large"
+                  placeholder="Pilih role akun"
+                  options={ROLE_OPTIONS}
+                  disabled={readOnly}
+                />
+              </Form.Item>
+            </Col>
+          )}
         </Row>
         <Divider />
         <Row gutter={16}>

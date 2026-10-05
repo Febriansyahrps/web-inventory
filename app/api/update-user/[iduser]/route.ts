@@ -18,9 +18,7 @@ export async function PATCH(
     );
   }
 
-  if (decoded.role !== "ADMIN") {
-    return NextResponse.json({ message: "Akses ditolak" }, { status: 403 });
-  }
+  const isAdmin = decoded.role === "ADMIN";
 
   const { iduser } = await params;
   const id = Number(iduser);
@@ -29,6 +27,10 @@ export async function PATCH(
       { message: "Id pengguna tidak valid" },
       { status: 400 },
     );
+  }
+
+  if (!isAdmin && decoded.userId !== id) {
+    return NextResponse.json({ message: "Akses ditolak" }, { status: 403 });
   }
 
   const existing = await prisma.user.findUnique({ where: { id } });
@@ -123,6 +125,12 @@ export async function PATCH(
 
   // role provided → validate existence
   if (role !== undefined) {
+    if (!isAdmin) {
+      return NextResponse.json(
+        { message: "Role hanya dapat diubah oleh admin" },
+        { status: 403 },
+      );
+    }
     if (typeof role !== "number" && typeof role !== "string") {
       return NextResponse.json(
         { message: "role harus sesuai data" },

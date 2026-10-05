@@ -13,14 +13,14 @@ export async function GET(
     return NextResponse.json({ message: "Tidak terautentikasi" }, { status: 401 });
   }
 
-  if (decoded.role !== "ADMIN") {
-    return NextResponse.json({ message: "Akses ditolak" }, { status: 403 });
-  }
-
   const { iduser } = await params;
   const id = Number(iduser);
   if (!Number.isInteger(id)) {
     return NextResponse.json({ message: "Id pengguna tidak valid" }, { status: 400 });
+  }
+
+  if (decoded.role !== "ADMIN" && decoded.userId !== id) {
+    return NextResponse.json({ message: "Akses ditolak" }, { status: 403 });
   }
 
   const user = await prisma.user.findUnique({

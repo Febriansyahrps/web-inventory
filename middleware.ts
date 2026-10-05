@@ -14,8 +14,9 @@ export const config = {
 };
 
 // Pages only reachable by ADMIN — mirrors the Sidebar, which hides these items
-// from non-admins.
-const ADMIN_ONLY_PREFIXES = ["/akun", "/riwayat", "/backup"];
+// from non-admins. "/akun" itself is open to every role (non-admins see their
+// own account form); its sub-routes (/akun/tambah, /akun/[id]) stay admin-only.
+const ADMIN_ONLY_PREFIXES = ["/riwayat", "/backup"];
 
 function base64UrlDecode(input: string): Uint8Array {
   const base64 = input.replace(/-/g, "+").replace(/_/g, "/");
@@ -92,9 +93,10 @@ export async function middleware(request: NextRequest) {
   // Admin-only pages: send non-admins back to the dashboard.
   if (payload && payload.role !== "ADMIN") {
     const pathname = request.nextUrl.pathname;
-    const isAdminOnly = ADMIN_ONLY_PREFIXES.some(
-      (path) => pathname === path || pathname.startsWith(`${path}/`),
-    );
+    const isAdminOnly =
+      ADMIN_ONLY_PREFIXES.some(
+        (path) => pathname === path || pathname.startsWith(`${path}/`),
+      ) || pathname.startsWith("/akun/");
     if (isAdminOnly) {
       return NextResponse.redirect(new URL("/", request.url));
     }
