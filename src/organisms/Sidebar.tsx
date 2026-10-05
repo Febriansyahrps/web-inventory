@@ -5,6 +5,7 @@ import {
   HistoryOutlined,
   LogoutOutlined,
   ProductOutlined,
+  QuestionCircleOutlined,
   SaveOutlined,
   UserOutlined,
 } from "@ant-design/icons";
@@ -122,6 +123,18 @@ const Sidebar = ({
           styles={{ root: { border: 0 } }}
           className="pl-2!"
           items={[
+            {
+              key: "bantuan",
+              icon: <QuestionCircleOutlined />,
+              label: "Bantuan",
+              onClick: () =>
+                window.open(
+                  role === "1"
+                    ? "https://drive.google.com/file/d/1RrXeaHKVJAmOGltmnV5ZLp771iHW7zUL/view?usp=sharing"
+                    : "https://drive.google.com/file/d/1Mnv-0EIYCIOPJhuxZe-cW-obL2dyc8h4/view?usp=sharing",
+                  "_blank",
+                ),
+            },
             {
               key: "logout",
               icon: <LogoutOutlined />,
