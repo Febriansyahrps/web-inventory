@@ -271,6 +271,9 @@ const ProductFilterDrawer = ({
             <RangePicker
               className="mt-2! w-full!"
               value={customRange}
+              disabledDate={(current) =>
+                current && current > dayjs().endOf("day")
+              }
               onChange={(dates) => {
                 updateParams({
                   range_date: "custom",

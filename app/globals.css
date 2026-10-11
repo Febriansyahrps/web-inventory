@@ -21,6 +21,14 @@ textarea:disabled::placeholder {
   color: transparent !important;
 }
 
+/* Date pickers: disabled (e.g. future) days must read as greyed out. The
+   global colorTextDisabled override above keeps read-only fields readable,
+   so restore the muted tone for picker cells specifically. */
+.ant-picker-cell-disabled,
+.ant-picker-cell-disabled .ant-picker-cell-inner {
+  color: rgba(0, 0, 0, 0.25) !important;
+}
+
 /* Disabled controls: neutral cursor instead of antd's not-allowed. */
 input:disabled,
 textarea:disabled,
