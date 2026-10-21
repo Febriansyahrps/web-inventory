@@ -6,7 +6,7 @@ import { triggerBackupEmailCheck } from "@/lib/scheduledBackupTrigger";
 export const maxDuration = 300;
 
 export async function GET(req: Request) {
-  const secret = process.env.CRON_SECRET;
+  const secret = process.env.CRON_AUTH_TOKEN;
   if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ message: "Tidak terautentikasi" }, { status: 401 });
   }
