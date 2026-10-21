@@ -8,7 +8,7 @@ export const maxDuration = 300;
 export async function GET(req: Request) {
   const secret = process.env.CRON_AUTH_TOKEN;
   if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
-    return NextResponse.json({ message: "Tidak terautentikasi Cihuy" }, { status: 401 });
+    return NextResponse.json({ message: "Tidak terautentikasi Cihuy", secret: `${secret}`  }, { status: 401 });
   }
 
   await triggerBackupEmailCheck();
